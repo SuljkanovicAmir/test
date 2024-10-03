@@ -1,37 +1,26 @@
 import { useEffect } from "react";
-import { observer } from "mobx-react-lite";
+import { Provider } from "mobx-react";
 
 import VehicleModelStore from "./stores/VehicleModelStore";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Home from "./pages/Home";
+import NavBar from "./components/NavBar";
+import VehicleMakes from "./pages/VehicleMakes";
+import VehicleModel from "./pages/VehicleModel";
 
-const App = observer(() => {
-  const { vehicleModelData } = VehicleModelStore;
-
-  useEffect(() => {
-    VehicleModelStore.getVehicleModels();
-    console.log(VehicleModelStore.vehicleModelData.length);
-  }, []);
-
-  if (VehicleModelStore.status === "loading") {
-    return <div>Loading...</div>;
-  }
-
-  if (VehicleModelStore.status === "error") {
-    return <div>Error loading vehicle models. Please try again later.</div>;
-  }
-
+const App = () => {
   return (
-    <div>
-      <h1>Vehicle Models</h1>
-
-      <ul>
-        {vehicleModelData.map((model) => (
-          <li key={model.id}>
-            {model.ModelName} ({model.BodyStyle}) - Make ID: {model.MakeId}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Provider VehicleModelStore={VehicleModelStore}>
+      <Router>
+        <NavBar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/vehicle-makes" element={<VehicleMakes />} />
+          <Route path="/vehicle-model/:id" element={<VehicleModel />} />
+        </Routes>
+      </Router>
+    </Provider>
   );
-});
+};
 
 export default App;

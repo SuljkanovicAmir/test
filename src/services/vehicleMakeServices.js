@@ -1,16 +1,14 @@
-import { db } from './firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { db } from "./firebase";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 
-const vehicleMakeCollection = collection(db, 'vehicleMakes');
+const vehicleMakeCollection = collection(db, "vehicleMakes");
 
 class VehicleMakeService {
-
-  async getAll() {
+  static async getAll() {
     const snapshot = await getDocs(vehicleMakeCollection);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
- 
   async create(vehicleMake) {
     try {
       const docRef = await addDoc(vehicleMakeCollection, vehicleMake);
@@ -20,8 +18,6 @@ class VehicleMakeService {
       throw error;
     }
   }
-
-
 }
 
-export default new VehicleMakeService();
+export default VehicleMakeService;

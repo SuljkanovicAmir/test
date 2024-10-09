@@ -10,6 +10,8 @@ import VehicleModelService from "../services/vehicleModelServices";
 class VehicleModelStore {
   constructor() {
     this.vehicleModelService = new VehicleModelService();
+    this.setFilters = this.setFilters.bind(this);
+
     makeObservable(this, {
       vehicleModelData: observable,
       status: observable,
@@ -21,7 +23,11 @@ class VehicleModelStore {
       addVehicleModel: action,
       updateVehicleModel: action,
       deleteVehicleModel: action,
+      setFilters: action,
+      setSorting: action,
+      setPage: action,
       totalPages: computed,
+      filters: observable,
     });
   }
 
@@ -31,37 +37,19 @@ class VehicleModelStore {
   pageNumber = 1;
   totalRecords = 0;
   sortBy = "name|asc";
-
-  getVehicleModels = async () => {
-    this.status = "loading";
-    try {
-      let params = {
-        rpp: 9,
-      };
-      if (this.sortBy) params.sort = this.sortBy;
-      if (this.pageNumber) params.page = this.pageNumber;
-      if (this.searchQuery) params.searchQuery = this.searchQuery;
-
-      const data = await VehicleModelService.getAll();
-      console.log(data.length);
-      runInAction(() => {
-        this.vehicleModelData = data;
-        this.totalRecords = data.length;
-        this.status = "success";
-      });
-    } catch (error) {
-      runInAction(() => {
-        this.status = "error";
-      });
-      console.error("Error fetching vehicle models:", error);
-    }
+  filters = {
+    make: [],
+    bodyStyle: [],
+    fuelType: [],
+    transmissionType: [],
   };
 
-  //
   addVehicleModel = async (model) => {
     this.status = "loading";
     try {
       const addedModel = await this.vehicleModelService.create(model);
+      const data = this.getVehicleModels(this.filters);
+      console.log(data);
       runInAction(() => {
         this.vehicleModelData = [...this.vehicleModelData, addedModel];
         this.totalRecords++;
@@ -93,11 +81,32 @@ class VehicleModelStore {
     }
   };
 
-  // Delete a vehicle model from Firebase
+  async getVehicleModels(filters) {
+    this.status = "loading";
+    console.log("Fetching vehicle models:", filters);
+    try {
+      console.log(filters);
+      const vehicleModels = await this.vehicleModelService.getVehicleModels(
+        filters
+      );
+      console.log("Fetching by filter");
+      runInAction(() => {
+        this.vehicleModelData = vehicleModels;
+        this.status = "success";
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.status = "error";
+      });
+      console.error("Error fetching vehicle models:", error);
+    }
+  }
+
   deleteVehicleModel = async (id) => {
     this.status = "loading";
+    console.log(id);
     try {
-      await this.vehicleModelService.delete(id);
+      await VehicleModelService.delete(id);
       runInAction(() => {
         this.vehicleModelData = this.vehicleModelData.filter(
           (item) => item.id !== id
@@ -112,6 +121,26 @@ class VehicleModelStore {
       console.error("Error deleting vehicle model:", error);
     }
   };
+
+  setFilters(filters) {
+    console.log("Current filters:", this.filters);
+    console.log("Incoming filters:", filters);
+
+    this.filters = { ...this.filters, ...filters };
+    this.pageNumber = 1;
+
+    this.getVehicleModels(this.filters);
+  }
+
+  setSorting(sortBy) {
+    this.sortBy = sortBy;
+    this.getVehicleModels();
+  }
+
+  setPage(pageNumber) {
+    this.pageNumber = pageNumber;
+    this.getVehicleModels();
+  }
 
   get totalPages() {
     return Math.ceil(this.totalRecords / 9);
